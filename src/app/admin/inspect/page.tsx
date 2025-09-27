@@ -104,7 +104,7 @@ export default function InspectExcelPage() {
                   <div className="bg-red-50 border border-red-200 p-3 rounded">
                     <div className="text-red-800">⚠️ No price-related columns found!</div>
                     <div className="text-sm text-red-700 mt-1">
-                      Your Excel file might not have columns with "price", "cost", or "amount" in the name.
+                      Your Excel file might not have columns with &quot;price&quot;, &quot;cost&quot;, or &quot;amount&quot; in the name.
                     </div>
                   </div>
                 )}
