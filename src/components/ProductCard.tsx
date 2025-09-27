@@ -76,10 +76,6 @@ export default function ProductCard({ product, onDelete, isAdmin = false }: Prod
               Regular price
             </div>
           )}
-          {/* Debug info - remove this later */}
-          <div className="text-xs text-gray-400 mt-1">
-            Debug: Origin: {product.origin_price}, Discount: {product.discount_price}
-          </div>
         </div>
 
         {/* Additional Info */}

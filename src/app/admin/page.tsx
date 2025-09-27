@@ -12,6 +12,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [deletingAll, setDeletingAll] = useState(false)
+  const [convertPrices, setConvertPrices] = useState(true) // Toggle for price conversion
+  const [priceDivisor, setPriceDivisor] = useState(100) // Manual price divisor
 
   // Fetch products from Supabase
   const fetchProducts = async () => {
@@ -116,13 +118,20 @@ export default function AdminPage() {
         const cleanPrice = (price: unknown): number => {
           if (typeof price === 'number') return price
           const priceStr = String(price || '0')
-          // Remove currency symbols (including MAD, DH, د.م., etc.), commas, and other non-numeric characters except decimal point
+          // Remove currency symbols from beginning and end (MAD, DH, د.م., etc.), commas, and other non-numeric characters except decimal point
           const cleaned = priceStr
-            .replace(/[MAD|DH|د\.م\.|د\.م|دج|درهم]/gi, '') // Remove MAD currency symbols
+            .replace(/^(MAD|DH|د\.م\.|د\.م|دج|درهم)\s*/gi, '') // Remove currency symbols from beginning
+            .replace(/\s*(MAD|DH|د\.م\.|د\.م|دج|درهم)$/gi, '') // Remove currency symbols from end
             .replace(/[^0-9.-]/g, '') // Remove other non-numeric characters
             .replace(/\s+/g, '') // Remove spaces
           const parsed = parseFloat(cleaned)
           return isNaN(parsed) ? 0 : parsed
+        }
+
+        // Check if prices seem too high (might be in cents or wrong unit)
+        const isPriceTooHigh = (price: number): boolean => {
+          // If price is over 50, it might be in cents or wrong unit
+          return price > 50
         }
         
         const parsedOriginPrice = cleanPrice(originPrice)
@@ -131,19 +140,29 @@ export default function AdminPage() {
         // Debug: Log price parsing for first few products
         if (index < 3) {
           console.log(`Product ${index + 1} price debug:`, {
-            rawOriginPrice: originPrice,
-            rawDiscountPrice: discountPrice,
+            originalOriginPrice: String(originPrice),
+            originalDiscountPrice: String(discountPrice),
             parsedOriginPrice,
             parsedDiscountPrice,
             productId: String(productId).substring(0, 20) + '...'
           })
         }
         
-        // If origin price is 0, use discount price as origin price
-        const finalOriginPrice = parsedOriginPrice > 0 ? parsedOriginPrice : parsedDiscountPrice
-        const finalDiscountPrice = parsedDiscountPrice > 0 ? parsedDiscountPrice : parsedOriginPrice
+        // Auto-convert prices if they seem too high (might be in cents)
+        let finalOriginPrice = parsedOriginPrice > 0 ? parsedOriginPrice : parsedDiscountPrice
+        let finalDiscountPrice = parsedDiscountPrice > 0 ? parsedDiscountPrice : parsedOriginPrice
+        
+        // Manual price conversion - always apply if enabled
+        if (convertPrices && priceDivisor > 0) {
+          console.log(`🔍 BEFORE conversion: Origin=${finalOriginPrice}, Discount=${finalDiscountPrice}`)
+          finalOriginPrice = finalOriginPrice / priceDivisor
+          finalDiscountPrice = finalDiscountPrice / priceDivisor
+          console.log(`🔄 AFTER conversion (÷${priceDivisor}): Origin=${finalOriginPrice}, Discount=${finalDiscountPrice}`)
+        } else {
+          console.log(`✅ No conversion applied: Origin=${finalOriginPrice}, Discount=${finalDiscountPrice}`)
+        }
 
-        return {
+        const productData = {
           product_id: String(productId),
           image_url: String(imageUrl),
           product_desc: String(productDesc),
@@ -155,6 +174,17 @@ export default function AdminPage() {
           coupon_info: String(couponInfo),
           video_url: String(videoUrl),
         }
+        
+        // Debug: Log final product data being stored
+        if (index < 3) {
+          console.log(`📦 FINAL product data for database:`, {
+            productId: String(productId).substring(0, 20) + '...',
+            origin_price: productData.origin_price,
+            discount_price: productData.discount_price
+          })
+        }
+        
+        return productData
       }).filter((product: Product) => product.product_id && product.image_url && product.promotion_url)
       
       console.log('Products after filtering:', newProducts.length)
@@ -367,6 +397,36 @@ export default function AdminPage() {
                   className="hidden"
                 />
               </label>
+              
+              {/* Price Conversion Controls */}
+              <div className="flex flex-col gap-2 px-4 py-2 bg-gray-100 rounded-md">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="convert-prices"
+                    type="checkbox"
+                    checked={convertPrices}
+                    onChange={(e) => setConvertPrices(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="convert-prices" className="text-sm text-gray-700">
+                    Convert prices
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-700">Divide by:</label>
+                  <input
+                    type="number"
+                    value={priceDivisor}
+                    onChange={(e) => setPriceDivisor(Number(e.target.value) || 100)}
+                    className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
+                    min="1"
+                    max="10000"
+                  />
+                  <span className="text-xs text-gray-500">
+                    (Try 100 for cents → currency)
+                  </span>
+                </div>
+              </div>
 
               {products.length > 0 && supabase && (
                 <button
