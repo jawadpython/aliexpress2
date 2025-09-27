@@ -1,0 +1,4 @@
+ProductId,Image Url,Product Desc,Origin Price,Discount Price,Promotion Url,Commission Rate,Positive Feedback,Coupon Info,Video Url
+123456789,https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400,Wireless Bluetooth Headphones,59.99,29.99,https://example.com/affiliate-link-1,5.5,98,SAVE10,https://example.com/video1.mp4
+987654321,https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400,Smart Fitness Watch,199.99,149.99,https://example.com/affiliate-link-2,7.2,95,FITNESS20,
+111222333,https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400,Portable Power Bank,39.99,19.99,https://example.com/affiliate-link-3,4.8,92,POWER15,https://example.com/video3.mp4
